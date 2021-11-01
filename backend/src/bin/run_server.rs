@@ -1,4 +1,6 @@
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{
+    get, http::ContentEncoding, middleware, web, App, HttpResponse, HttpServer, Responder,
+};
 use anyhow::Result;
 use atcoder_brainfuck_backend::database::Database;
 use dotenv::dotenv;
@@ -24,6 +26,7 @@ async fn main() -> Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(db.clone())
+            .wrap(middleware::Compress::new(ContentEncoding::Gzip))
             .service(web::scope("/api/v1").service(recent_submissions))
     })
     .bind("127.0.0.1:8080")?
