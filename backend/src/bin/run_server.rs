@@ -4,6 +4,7 @@ use actix_web::{
 use anyhow::Result;
 use atcoder_brainfuck_backend::database::Database;
 use dotenv::dotenv;
+use std::env;
 
 #[get("/recent_submissions")]
 async fn recent_submissions(db: web::Data<Database>) -> impl Responder {
@@ -18,14 +19,17 @@ async fn recent_submissions(db: web::Data<Database>) -> impl Responder {
 #[actix_web::main]
 async fn main() -> Result<()> {
     dotenv().ok();
+    env::set_var("RUST_LOG", "info");
+    env_logger::init();
 
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL is not set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set");
 
     let db = Database::connect(&database_url).await?;
 
     HttpServer::new(move || {
         App::new()
             .data(db.clone())
+            .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::new(ContentEncoding::Gzip))
             .service(web::scope("/api/v1").service(recent_submissions))
     })
